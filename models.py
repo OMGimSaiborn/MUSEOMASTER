@@ -1,24 +1,19 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 from typing import List
 
 # RELACIONADOS CON EL EMPLEADO
-class BookingEmployee(BaseModel):
+class Employee(BaseModel):
     name: str
     curp: str
     puesto: str
     cv: str
     foto: str
-
-class Employee(BookingEmployee):
+    email : str
     rfc: str
     area: str
     formacion: List[str]
     experiencia: str
-    # curp : str
-    # fingerprint : str
-    # foto : str
-    # puesto : str
-    # cv : str
+    event_info: List[dict] = []
 
 # RELACIONADOS CON EL MUSEO
 class MapMuseum(BaseModel):
@@ -42,21 +37,21 @@ class Space(BaseModel):
 
 #RELACIONADOS CON BOLETO
 
-class TicketSale(BaseModel):
-    employee_id: str
-    ticket_type: str
-    quantity: int
-    total_price: float
-
 class TicketType(BaseModel):
     name: str
     description: str
     price: float
+class TicketSale(BaseModel):
+    employee_id: str
+    ticket_type: TicketType
+    quantity: int
+    total_price: float
 
-#RELACIONADS CON USUARIO
-
-class User(BaseModel):
-    username: str
-    password: str
-    email: str
-    purchases: List[TicketSale] = []
+#MODELOS DE EVENTOS
+class Event(BaseModel):
+    title: str
+    description: str
+    date: str
+    location: str
+    image_url: str
+    organizer_id: str 
