@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException
 from pymongo import MongoClient
 from typing import List
 from bson import ObjectId
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from models import Event
 
 # Configura la conexión a MongoDB
@@ -17,20 +17,32 @@ class EventInDB(BaseModel):
     event: Event
     _id: ObjectId
 
+class EventResponse(Event):
+    organizer_id: str = Field(..., alias="_id")  # Convertir el _id a cadena
+
+
 # Obtener todos los eventos
 @app.get("/events/all", response_model=List[Event])
 async def get_all_events():
     events = list(collection_events.find())
+    for event in events:
+        event['organizer_id'] = str(event['organizer_id'])
     return events
+#   return [Event(**event, organizer_id=str(event['_id'])) for event in events]
 
 # Obtener detalles de un evento específico
-@app.get("/events/{event_id}", response_model=Event)
+@app.get("/events/{event_id}", response_model=EventResponse)
 async def get_event(event_id: str):
     # Buscar un evento específico por su ID en la colección MongoDB
     event = collection_events.find_one({"_id": ObjectId(event_id)})
     if not event:
         raise HTTPException(status_code=404, detail="Evento no encontrado")
-    return event
+
+    # Convertir el _id a cadena
+    event["_id"] = str(event["_id"])
+
+    return EventResponse(**event)
+
 
 # Crear evento
 @app.post("/events/", response_model=Event)

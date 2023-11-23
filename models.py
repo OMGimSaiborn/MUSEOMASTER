@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 from typing import List
 
 # RELACIONADOS CON EL EMPLEADO
@@ -37,16 +37,15 @@ class Space(BaseModel):
 
 #RELACIONADOS CON BOLETO
 
-class TicketSale(BaseModel):
-    employee_id: str
-    ticket_type: str
-    quantity: int
-    total_price: float
-
 class TicketType(BaseModel):
     name: str
     description: str
     price: float
+class TicketSale(BaseModel):
+    employee_id: str
+    ticket_type: TicketType
+    quantity: int
+    total_price: float
 
 #MODELOS DE EVENTOS
 class Event(BaseModel):
@@ -54,6 +53,5 @@ class Event(BaseModel):
     description: str
     date: str
     location: str
-    attendees: List[str]
     image_url: str
     organizer_id: str 

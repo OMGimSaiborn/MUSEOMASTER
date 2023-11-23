@@ -29,7 +29,9 @@ async def create_employee(employee: Employee):
     result = collection_employees.insert_one(employee_data)
     employee_id = result.inserted_id
 
-    return {"name": employee_data["name"], "_id": employee_id, "event_info": []}
+    created_employee = Employee(name=employee_data["name"], _id=str(employee_id), event_info=[])
+    
+    return created_employee
 
 #Actualizar empleado
 @app.put("/{employee_id}", response_model=Employee, tags=["employees"])
@@ -69,7 +71,7 @@ async def read_employees():
     employees = collection_employees.find()
     return [Employee(**employee) for employee in employees]
 
-#Mostrar un emplado especifico
+# Mostrar un empleado específico
 @app.get("/{employee_id}", response_model=Employee, tags=["employees"])
 async def read_employee(employee_id: str):
     employee = collection_employees.find_one({"_id": ObjectId(employee_id)})
@@ -77,6 +79,8 @@ async def read_employee(employee_id: str):
     if not employee:
         raise HTTPException(status_code=404, detail="Employee not found")
 
+    # Convertir el _id a cadena y crear un objeto Employee
+    employee["_id"] = str(employee["_id"])
     return Employee(**employee)
 
 #Borrar empleado especifico
