@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Response
 from pymongo import MongoClient
 from fastapi.responses import JSONResponse
 from bson import json_util
@@ -6,47 +6,55 @@ from models import TicketSale, TicketType
 from bson import ObjectId
 from typing import List
 from pydantic import BaseModel
+from db import get_db
 
-app = APIRouter()
+tickets_collection_name = "boletos"
+employee_collection_name = "empleados"
 
-# Configura la conexión a MongoDB
-client = MongoClient("mongodb://localhost:27017/")
-db = client["MUSEOMASTER"]
-collection_tickets = db["boletos"]
-collection_employees = db["empleados"]
-
-app = APIRouter()
+ticket_router = APIRouter()
 
 class TicketInDB(BaseModel):
     ticket: TicketType
     _id: ObjectId
 
 #Ruta para crear un tipo de boleto
-@app.post("/tickets/create", response_model=TicketInDB)
-async def create_ticket(ticket: TicketType):
+@ticket_router.post("/tickets/create", response_model=TicketInDB)
+async def create_ticket(ticket: TicketType, res: Response, db = Depends(get_db)):
+  try:
     # Guardar el tipo de boleto en la base de datos
-    result = collection_tickets.insert_one(ticket.dict())
+    tickets_collection = db[tickets_collection_name]
+    result = tickets_collection.insert_one(ticket.model_dump())
     
     # Obtener el ID asignado por MongoDB
     inserted_id = result.inserted_id
     
     # Devolver el tipo de boleto creado junto con su ID
     return TicketInDB(ticket=ticket, _id=inserted_id)
+  except Exception as e:
+    print(e)
+    raise e
 
 # Obtener todos los Tickets
-@app.get("/tickets/all", response_model=List[TicketType])
-async def get_all_tickets():
-    tickets = list(collection_tickets.find())
+@ticket_router.get("/tickets/all", response_model=List[TicketType])
+async def get_all_tickets(db = Depends(get_db)):
+  try:
+    tickets_collection = db[tickets_collection_name]
+    tickets = list(tickets_collection.find())
     return tickets
-
+  except Exception as e:
+    print(e)
+    raise HTTPException(status_code=500, detail="Error al obtener los boletos")
+    
 # Obtener detalles de un boleto específico
-@app.get("/tickets/{ticket_id}", response_model=TicketType)
-async def get_ticket(ticket_id: str):
-    ticket = collection_tickets.find_one({"_id": ObjectId(ticket_id)})
-    if not ticket:
-        raise HTTPException(status_code=404, detail="Ticket no encontrado")
+@ticket_router.get("/tickets/{ticket_id}", response_model=TicketType)
+async def get_ticket(ticket_id: str, res = Response, db = Depends(get_db)):
+  tickets_collection = db[tickets_collection_name]
+  ticket = tickets_collection.find_one({"_id": ObjectId(ticket_id)})
+  if not ticket:
+    res.status_code = 404
+    raise HTTPException(status_code=404, detail="Boleto no encontrado")
 
-    # Convertir el _id a cadena
-    ticket["_id"] = str(ticket["_id"])
+  # Convertir el _id a cadena
+  # ticket["_id"] = str(ticket["_id"])
 
-    return TicketType(**ticket)  # Crear una instancia de TicketType con los datos encontrados
+  return TicketType(name="a", description="b", price=1)  # Crear una instancia de TicketType con los datos encontrados

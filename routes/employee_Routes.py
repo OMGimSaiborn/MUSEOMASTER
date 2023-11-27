@@ -4,7 +4,7 @@ from typing import List
 from bson import ObjectId
 from pydantic import BaseModel
 from models import Employee
-from .event_Routes import collection_events
+from event_routes import collection_events
 
 # Configura la conexión a MongoDB
 client = MongoClient("mongodb://localhost:27017/")

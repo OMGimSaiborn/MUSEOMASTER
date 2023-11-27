@@ -2,3 +2,7 @@ __pycache__
 images
 myenv
 **/__pycache__
+bin/
+lib/
+include/
+.env
