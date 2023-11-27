@@ -3,11 +3,10 @@ from routes.ticket_routes import ticket_router
 
 # from routes import ticket_routes, employee_routes, event_routes
 from fastapi.middleware.cors import CORSMiddleware
-from db import get_db
 
 # Crear la aplicación
-app = FastAPI(responses={404: {"detail": str}})
-get_db()
+app = FastAPI(responses={404: {"detail": "Item not found"}})
+
 # Configurar CORS
 origins = ["*"]
 app.add_middleware(

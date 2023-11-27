@@ -11,7 +11,7 @@ from db import get_db
 tickets_collection_name = "boletos"
 employee_collection_name = "empleados"
 
-ticket_router = APIRouter()
+ticket_router = APIRouter(prefix="/tickets", tags=["Tickets"])
 
 class TicketInDB(BaseModel):
     ticket: TicketType
@@ -19,7 +19,7 @@ class TicketInDB(BaseModel):
 
 #Ruta para crear un tipo de boleto
 @ticket_router.post("/tickets/create", response_model=TicketInDB)
-async def create_ticket(ticket: TicketType, res: Response, db = Depends(get_db)):
+def create_ticket(ticket: TicketType, db = Depends(get_db)):
   try:
     # Guardar el tipo de boleto en la base de datos
     tickets_collection = db[tickets_collection_name]
@@ -35,19 +35,18 @@ async def create_ticket(ticket: TicketType, res: Response, db = Depends(get_db))
     raise e
 
 # Obtener todos los Tickets
-@ticket_router.get("/tickets/all", response_model=List[TicketType])
-async def get_all_tickets(db = Depends(get_db)):
+@ticket_router.get("/tickets/all")
+def get_all_tickets(db = Depends(get_db)):
   try:
     tickets_collection = db[tickets_collection_name]
-    tickets = list(tickets_collection.find())
-    return tickets
+    return list(tickets_collection.find())
   except Exception as e:
     print(e)
     raise HTTPException(status_code=500, detail="Error al obtener los boletos")
     
 # Obtener detalles de un boleto específico
 @ticket_router.get("/tickets/{ticket_id}", response_model=TicketType)
-async def get_ticket(ticket_id: str, res = Response, db = Depends(get_db)):
+def get_ticket(ticket_id: str, res = Response, db = Depends(get_db)):
   tickets_collection = db[tickets_collection_name]
   ticket = tickets_collection.find_one({"_id": ObjectId(ticket_id)})
   if not ticket:
@@ -55,6 +54,6 @@ async def get_ticket(ticket_id: str, res = Response, db = Depends(get_db)):
     raise HTTPException(status_code=404, detail="Boleto no encontrado")
 
   # Convertir el _id a cadena
-  # ticket["_id"] = str(ticket["_id"])
+  ticket["_id"] = str(ticket["_id"])
 
   return TicketType(name="a", description="b", price=1)  # Crear una instancia de TicketType con los datos encontrados
