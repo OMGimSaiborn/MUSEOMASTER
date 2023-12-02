@@ -6,3 +6,4 @@ bin/
 lib/
 include/
 .env
+pyenv.cfg
