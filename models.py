@@ -38,7 +38,7 @@ class Space(BaseModel):
 #RELACIONADOS CON BOLETO
 
 class TicketType(BaseModel):
-    name: str
+    type: str
     description: str
     price: float
 class TicketSale(BaseModel):

@@ -10,6 +10,12 @@ source bin/activate
 uvicorn main:app --reload --port 5000
 ```
 
+# CREAR RAMA POR FUNCIONALIDAD
+``` bash
+git branch branch_name
+git checkout branch_name
+```
+
 # SUBIR CAMBIOS
 ``` bash
 git add .
