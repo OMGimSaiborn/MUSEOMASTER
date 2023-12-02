@@ -16,3 +16,8 @@ git add .
 git commit -m "message"
 git push origin branch_name
 ```
+
+# BAJAR CAMBIOS
+``` bash
+git pull origin branch_name
+```
