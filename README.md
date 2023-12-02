@@ -9,3 +9,10 @@ pip install -r requeriments.txt
 source bin/activate
 uvicorn main:app --reload --port 5000
 ```
+
+# SUBIR CAMBIOS
+``` bash
+git add .
+git commit -m "message"
+git push origin branch_name
+```
