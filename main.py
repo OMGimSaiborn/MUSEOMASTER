@@ -18,5 +18,6 @@ app.add_middleware(
 
 # Incluir las rutas
 app.include_router(ticket_router)
+
 # app.include_router(employee_routes.app)
 # app.include_router(event_routes.app)
