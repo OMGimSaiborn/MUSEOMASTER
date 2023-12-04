@@ -6,4 +6,8 @@ bin/
 lib/
 include/
 .env
-pyenv.cfg
+pyvenv.cfg
+Include/
+Lib/
+Scripts/
+lib64

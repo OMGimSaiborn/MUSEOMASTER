@@ -1,12 +1,18 @@
 # MUSEOMASTER 
 ``` bash
 172.100.77.134:5000
-pip install -r requeriments.txt
+pip install -r requirements.txt
 ```
 
 # INICIAR EL SISTEMA
 ``` bash
 source bin/activate
+uvicorn main:app --reload --port 5000
+```
+ 
+# INICIAR EL SISTEMA WINDOWS
+``` bash
+ .\scripts\activate
 uvicorn main:app --reload --port 5000
 ```
 
