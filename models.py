@@ -21,19 +21,20 @@ class MapMuseum(BaseModel):
     lastUpdate: str
     author: str
 
-class Room(BaseModel):
-    name: str
+class MuseumRoomType(BaseModel):
+    room_name: str
+    exhibits: List[str]
+    capacity: int
+    description: str
+    is_accessible: bool
+    multimedia_guide_available: bool
+    maintenance: str
 
-class Activity(Room):
+class Activity(BaseModel):
     name: str
     type: str
-    room: str
+    room: str #Relacionar la habitacion de museo
     nameGroup: str
-
-class Space(BaseModel):
-    type: str
-    name: str
-    location: str
 
 #RELACIONADOS CON BOLETO
 
