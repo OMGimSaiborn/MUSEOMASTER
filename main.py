@@ -1,15 +1,19 @@
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import PlainTextResponse
+from fastapi import FastAPI
+from routes.ticket_routes import ticket_router
+from routes.employee_routes import employee_router
+from routes.event_routes import event_router
+from routes.room_routes import room_router
+
 from fastapi.middleware.cors import CORSMiddleware
 from routes.ticket_routes import ticket_router
 from routes.employee_routes import employee_router
 # from routes import ticket_routes, employee_routes, event_routes
 
-# Crear la aplicación
 app = FastAPI(responses={404: {"detail": "Item not found"}})
 
-# Configurar CORS
 origins = ["*"]
 app.add_middleware(
     CORSMiddleware,
@@ -26,4 +30,6 @@ async def validation_exception_handler(request, exc):
 # Incluir las rutas
 app.include_router(ticket_router)
 app.include_router(employee_router)
-# app.include_router(event_routes.app)
+app.include_router(event_router)
+app.include_router(room_router)
+# app.include_router(calendar_routes.app)
