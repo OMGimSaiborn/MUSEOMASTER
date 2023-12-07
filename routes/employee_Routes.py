@@ -1,43 +1,47 @@
-from fastapi import APIRouter, HTTPException
-from pymongo import MongoClient
+from fastapi import APIRouter, HTTPException, Depends
 from typing import List
 from bson import ObjectId
 from pydantic import BaseModel
 from models import Employee
-from event_routes import collection_events
+from db import get_db
 
-# Configura la conexión a MongoDB
-client = MongoClient("mongodb://localhost:27017/")
-db = client["MUSEOMASTER"]
-collection_employees = db["empleados"]
+employee_collection_name = "empleados"
 
-app = APIRouter()
+employee_router = APIRouter(prefix="/employees", tags=["Employees"])
 
 class EmployeeInDB(BaseModel):
     employee: Employee
     _id: ObjectId
 
 # Crear empleado
-@app.post("/", response_model=Employee, tags=["employees"])
-async def create_employee(employee: Employee):
-    employee_data = employee.dict()
+@employee_router.post("/", response_model=List)
+async def create_employee(employee: Employee, db = Depends(get_db)):
+  employee_data = employee.model_dump()
+  print(employee_data)
+  collection_employees = db[employee_collection_name]
+  existing_employee = collection_employees.find_one({"name": employee_data["name"]})
+  if existing_employee:
+    raise HTTPException(status_code=400, detail="Employee with this name already exists")
 
-    existing_employee = collection_employees.find_one({"name": employee_data["name"]})
-    if existing_employee:
-        raise HTTPException(status_code=400, detail="Employee with this name already exists")
+  result = collection_employees.insert_one(employee_data)
+  created_employee = collection_employees.find_one({"_id": ObjectId(result.inserted_id)})
+  print('created_employee:', created_employee)
 
-    result = collection_employees.insert_one(employee_data)
-    employee_id = result.inserted_id
+  
 
-    created_employee = Employee(name=employee_data["name"], _id=str(employee_id), event_info=[])
+  return []
+  employee_id = result.inserted_id
+#   created_employee = Employee(name=employee_data["name"], _id=str(employee_id), event_info=[])
     
-    return created_employee
+#   return created_employee
 
 #Actualizar empleado
-@app.put("/{employee_id}", response_model=Employee, tags=["employees"])
-async def update_employee(employee_id: str, employee: Employee):
-    employee_data = employee.dict()
-
+@employee_router.put("/{employee_id}", response_model=Employee)
+async def update_employee(employee_id: str, employee: Employee, db = Depends(get_db)):
+    employee_data = employee.model_dump()
+    collection_employees = db[employee_collection_name]
+    collection_events = db["eventos"]
+    
     result = collection_employees.update_one(
         {"_id": ObjectId(employee_id)},
         {"$set": employee_data}
@@ -66,14 +70,16 @@ async def update_employee(employee_id: str, employee: Employee):
     return {"name": updated_employee["name"], "event_info": updated_employee["event_info"]}
 
 #Mostrar todos los empleados
-@app.get("/", response_model=List[Employee], tags=["employees"])
-async def read_employees():
+@employee_router.get("/", response_model=List[Employee], tags=["Employees"])
+async def read_employees(db = Depends(get_db)):
+    collection_employees = db[employee_collection_name]
     employees = collection_employees.find()
     return [Employee(**employee) for employee in employees]
 
 # Mostrar un empleado específico
-@app.get("/{employee_id}", response_model=Employee, tags=["employees"])
-async def read_employee(employee_id: str):
+@employee_router.get("/{employee_id}", response_model=Employee, tags=["Employees"])
+async def read_employee(employee_id: str, db = Depends(get_db)):
+    collection_employees = db[employee_collection_name]
     employee = collection_employees.find_one({"_id": ObjectId(employee_id)})
 
     if not employee:
@@ -84,11 +90,12 @@ async def read_employee(employee_id: str):
     return Employee(**employee)
 
 #Borrar empleado especifico
-@app.delete("/{employee_id}", response_model=Employee, tags=["employees"])
-async def delete_employee(employee_id: str):
+@employee_router.delete("/{employee_id}", response_model=Employee, tags=["Employees"])
+async def delete_employee(employee_id: str, db = Depends(get_db)):
     # Buscar eventos en los que el empleado es organizador
+    collection_events = db["eventos"]
     events_organized = list(collection_events.find({"organizer_id": employee_id}))
-
+    collection_employees = db[employee_collection_name]
     result = collection_employees.delete_one({"_id": ObjectId(employee_id)})
 
     if result.deleted_count == 0:

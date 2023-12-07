@@ -41,6 +41,10 @@ class TicketType(BaseModel):
     type: str
     description: str
     price: float
+
+class FullTicketType(TicketType):
+    id: str
+    
 class TicketSale(BaseModel):
     employee_id: str
     ticket_type: TicketType
