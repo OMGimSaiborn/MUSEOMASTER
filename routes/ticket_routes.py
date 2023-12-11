@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends, Response
+from fastapi import APIRouter, HTTPException, Depends
 from models import TicketType, FullTicketType
 from bson import ObjectId
 from typing import List

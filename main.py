@@ -10,7 +10,6 @@ from routes.room_routes import room_router
 from fastapi.middleware.cors import CORSMiddleware
 from routes.ticket_routes import ticket_router
 from routes.employee_routes import employee_router
-# from routes import ticket_routes, employee_routes, event_routes
 
 app = FastAPI(responses={404: {"detail": "Item not found"}})
 

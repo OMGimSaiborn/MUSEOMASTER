@@ -3,7 +3,6 @@ from pymongo.collection import Collection
 from models import Employee
 from bson import ObjectId
 from pydantic import BaseModel 
-from typing import List
 from db import get_db
 
 employee_collection_name = "empleados"
