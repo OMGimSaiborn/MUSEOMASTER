@@ -1,32 +1,14 @@
 from fastapi import APIRouter, HTTPException, Depends
-from pymongo import MongoClient
-from fastapi.responses import JSONResponse
-from bson import json_util
-from models import Event
+from models import Event, EventResponse, DeletedEventResponse
 from pymongo.collection import Collection
-from bson import ObjectId
 from typing import List
-from pydantic import BaseModel, Field
+from bson import ObjectId
 from db import get_db
 
 events_collection_name = "eventos"
 employees_collection_name = "empleados"
 
 event_router = APIRouter(prefix="", tags=["Events"])
-
-class EventInDB(BaseModel):
-    event: Event
-    _id: ObjectId
-
-class EventResponse(Event):
-    organizer_id: str = Field(..., alias="_id")
-
-class DeletedEventResponse(BaseModel):
-    title: str
-    description: str
-    date: str
-    location: str
-    organizer_id: str
 
 # Funciones de manejo de conexiones a la base de datos
 def get_events_collection(db=Depends(get_db)):
