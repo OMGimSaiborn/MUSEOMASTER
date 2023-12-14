@@ -1,5 +1,6 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import List
+from bson import ObjectId
 
 # RELACIONADOS CON EL EMPLEADO
 class Employee(BaseModel):
@@ -55,8 +56,24 @@ class TicketSale(BaseModel):
 #MODELOS DE EVENTOS
 class Event(BaseModel):
     title: str
+    type : str
     description: str
     date: str
     location: str
     image_url: str
     organizer_id: str 
+
+class EventInDB(BaseModel):
+    event: Event
+    _id: ObjectId
+
+class EventResponse(Event):
+    organizer_id: str = Field(..., alias="_id")
+
+class DeletedEventResponse(BaseModel):
+    title: str
+    type : str
+    description: str
+    date: str
+    location: str
+    organizer_id: str
