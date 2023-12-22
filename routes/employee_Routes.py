@@ -1,167 +1,115 @@
 from fastapi import APIRouter, HTTPException, Depends
 from pymongo.collection import Collection
-from models import Employee
+from models import Employee, EmployeeInDB, EmployeeCreateResponse
 from bson import ObjectId
-from pydantic import BaseModel 
 from db import get_db
+from typing import List
 
 employee_collection_name = "empleados"
 event_collection_name = "eventos"
 
 employee_router = APIRouter(prefix="/employees", tags=["Employees"])
 
-class EmployeeInDB(BaseModel):
-    employee: Employee
-    _id: ObjectId
-
-# Funciones de manejo de conexiones a la base de datos
 def get_employees_collection(db=Depends(get_db)) -> Collection:
     return db[employee_collection_name]
 
 def get_events_collection(db=Depends(get_db)) -> Collection:
     return db[event_collection_name]
 
-# Crear empleado
-@employee_router.post("/create", response_model=EmployeeInDB)
+#Crear empleado
+@employee_router.post("/create", response_model=EmployeeCreateResponse)
 def create_employee(
     employee: Employee,
     employees_collection: Collection = Depends(get_employees_collection),
 ):
     try:
-        employee_data = employee.dict()
-
-        existing_employee = employees_collection.find_one({"name": employee_data["name"]})
+        existing_employee = employees_collection.find_one({"name": employee.name})
         if existing_employee:
-            raise HTTPException(status_code=400, detail="Employee with this name already exists")
-
-        result = employees_collection.insert_one(employee_data)
+            raise HTTPException(
+                status_code=400,
+                detail=f"Employee with name '{employee.name}' already exists"
+            )
+        result = employees_collection.insert_one(employee.dict())
         employee_id = result.inserted_id
-
-        created_employee = EmployeeInDB(employee=employee, _id=str(employee_id))
-
-        return created_employee
+        created_employee = EmployeeInDB(_id=str(employee_id), **employee.dict())
+        success_message = f"Employee '{employee.name}' created successfully."
+        return EmployeeCreateResponse(message=success_message, employee=created_employee)
     except Exception as e:
         print(e)
-        raise HTTPException(status_code=500, detail="Error al crear el empleado")
+        raise HTTPException(status_code=500, detail="Error creating employee")
 
-# Actualizar empleado
-@employee_router.put("/{employee_id}")
+# Obtener todos los empleados
+@employee_router.get("/all", response_model=List[EmployeeInDB])
+def get_all_employees(employees_collection: Collection = Depends(get_employees_collection)):
+    try:
+        employees = employees_collection.find()
+        return [EmployeeInDB(**employee) for employee in employees]
+    except Exception as e:
+        print(e)
+        raise HTTPException(status_code=500, detail="Error obteniendo empleados")
+
+# Obtener detalles de un empleado específico
+@employee_router.get("/{employee_id}", response_model=EmployeeInDB)
+def get_employee(
+    employee_id: str,
+    employees_collection: Collection = Depends(get_employees_collection),
+):
+    try:
+        employee_data = employees_collection.find_one({"_id": ObjectId(employee_id)})
+
+        if not employee_data:
+            raise HTTPException(status_code=404, detail="Empleado no encontrado")
+
+        employee_data["_id"] = str(employee_data["_id"])
+        return EmployeeInDB(**employee_data)
+    except Exception as e:
+        print(e)
+        raise HTTPException(status_code=500, detail="Error obteniendo empleado")
+
+#Actualizar empleado
+@employee_router.put("/{employee_id}", response_model=EmployeeInDB)
 def update_employee(
     employee_id: str,
-    employee: Employee,
+    updated_employee: Employee,
     employees_collection: Collection = Depends(get_employees_collection),
     events_collection: Collection = Depends(get_events_collection),
 ):
     try:
-        employee_data = employee.dict()
-
-        # Obtener el empleado actual
         existing_employee = employees_collection.find_one({"_id": ObjectId(employee_id)})
         if not existing_employee:
-            raise HTTPException(status_code=404, detail="Empleado no encontrado")
-
-        print(f"Updating employee: {existing_employee['_id']} - {existing_employee['name']}")
-
-        # Obtener los eventos organizados por el antiguo empleado
-        events_organized = list(events_collection.find({"organizer_id": ObjectId(employee_id)}))
-
-        print(f"Events organized by the old employee: {events_organized}")
-
-        # Eliminar la información del evento antiguo del antiguo empleado
-        for event in events_organized:
-            employees_collection.update_one(
-                {"_id": ObjectId(employee_id)},
-                {"$pull": {"event_info": {"event_id": str(event["_id"])}}}
-            )
-
-        print(f"Event info removed from the old employee: {existing_employee['event_info']}")
-
-        # Actualizar la información del empleado
+            raise HTTPException(status_code=404, detail="Employee not found")
         result = employees_collection.update_one(
             {"_id": ObjectId(employee_id)},
-            {"$set": employee_data}
+            {"$set": updated_employee.dict()},
         )
 
         if result.modified_count == 0:
-            raise HTTPException(status_code=404, detail="Empleado no encontrado")
-
-        print(f"Employee information updated: {employee_data}")
-
-        # Obtener el ID del nuevo organizador
-        new_organizer_id = ObjectId(employee_data.get("organizer_id"))
-
-        # Obtener los eventos organizados por el nuevo organizador
-        new_events_organized = list(events_collection.find({"organizer_id": new_organizer_id}))
-
-        print(f"Events organized by the new employee: {new_events_organized}")
-
-        # Construir la lista de event_info con los IDs de los eventos para el nuevo organizador
-        new_employee_event_info = [{"event_id": str(event["_id"]), "name": event["title"], "date": event["date"]} for event in new_events_organized]
-
-        # Agregar la información del evento actualizado al nuevo organizador
-        employees_collection.update_one(
-            {"_id": new_organizer_id},
-            {"$set": {"event_info": new_employee_event_info}}
-        )
-
-        print(f"Event info added to the new employee: {new_employee_event_info}")
-
-        updated_employee = employees_collection.find_one({"_id": ObjectId(employee_id)})
-
-        return {"name": updated_employee["name"], "event_info": updated_employee["event_info"]}
-    except Exception as e:
-        print(e)
-        raise HTTPException(status_code=500, detail="Error al actualizar el empleado")
-
-
-# Obtener todos los empleados
-@employee_router.get("/all")
-def read_employees(employees_collection: Collection = Depends(get_employees_collection)):
-    try:
-        employees = employees_collection.find()
-        return [Employee(**employee) for employee in employees]
-    except Exception as e:
-        print(e)
-        raise HTTPException(status_code=500, detail="Error al obtener los empleados")
-
-# Mostrar un empleado específico
-@employee_router.get("/{employee_id}")
-def read_employee(
-    employee_id: str,
-    employees_collection: Collection = Depends(get_employees_collection),
-):
-    try:
-        employee = employees_collection.find_one({"_id": ObjectId(employee_id)})
-
-        if not employee:
             raise HTTPException(status_code=404, detail="Employee not found")
+        updated_employee_data = employees_collection.find_one({"_id": ObjectId(employee_id)})
+        updated_employee_data["_id"] = str(updated_employee_data["_id"])
 
-        # Convertir el _id a cadena y crear un objeto Employee
-        employee["_id"] = str(employee["_id"])
-        return Employee(**employee)
+        return EmployeeInDB(**updated_employee_data)
     except Exception as e:
         print(e)
-        raise HTTPException(status_code=500, detail="Error al obtener el empleado")
-    
-    # Eliminar empleado
-@employee_router.delete("/{employee_id}")
+        raise HTTPException(status_code=500, detail="Error updating employee")
+
+#Borrar empleado
+@employee_router.delete("/{employee_id}", response_model=dict)
 def delete_employee(
     employee_id: str,
     employees_collection: Collection = Depends(get_employees_collection),
 ):
     try:
-        # Verificar si el empleado existe
         existing_employee = employees_collection.find_one({"_id": ObjectId(employee_id)})
         if not existing_employee:
-            raise HTTPException(status_code=404, detail="Empleado no encontrado")
+            raise HTTPException(status_code=404, detail="Employee not found")
 
-        # Eliminar el empleado
         result = employees_collection.delete_one({"_id": ObjectId(employee_id)})
 
         if result.deleted_count == 0:
-            raise HTTPException(status_code=500, detail="Error al eliminar el empleado")
+            raise HTTPException(status_code=500, detail="Error deleting employee")
 
-        return {"message": "Empleado eliminado correctamente"}
+        return {"message": "Employee deleted successfully"}
     except Exception as e:
         print(e)
-        raise HTTPException(status_code=500, detail="Error al eliminar el empleado")
+        raise HTTPException(status_code=500, detail="Error deleting employee")

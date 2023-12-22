@@ -6,10 +6,10 @@ from routes.ticket_routes import ticket_router
 from routes.employee_routes import employee_router
 from routes.event_routes import event_router
 from routes.room_routes import room_router
-
+from routes.calendar_routes import calendar_router
+from routes.ticket_routes import ticket_stats_router
 from fastapi.middleware.cors import CORSMiddleware
-from routes.ticket_routes import ticket_router
-from routes.employee_routes import employee_router
+from routes.binnacle_routes import binnacle_router
 
 app = FastAPI(responses={404: {"detail": "Item not found"}})
 
@@ -31,4 +31,11 @@ app.include_router(ticket_router)
 app.include_router(employee_router)
 app.include_router(event_router)
 app.include_router(room_router)
-# app.include_router(calendar_routes.app)
+app.include_router(calendar_router)
+app.include_router(binnacle_router)
+app.include_router(ticket_stats_router)
+
+
+@app.get('/')
+def hello():
+    return {"Hello"}
