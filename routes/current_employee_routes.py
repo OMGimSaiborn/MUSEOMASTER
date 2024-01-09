@@ -47,9 +47,7 @@ async def auth_user(token : str = Depends(oauth2)):
         raise exception
     return search_user(email)
 
-async def current_user(user : User = Depends(auth_user)):
-    return user
 
 @current_user_router.get("/")
-async def me(user: User = Depends(current_user)):
+async def me(user: User = Depends(auth_user)):
     return user

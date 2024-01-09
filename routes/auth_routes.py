@@ -1,5 +1,8 @@
-from fastapi import Depends, HTTPException, APIRouter
-from fastapi.security import OAuth2PasswordBearer
+from fastapi import FastAPI, Depends, HTTPException, APIRouter
+from pymongo import MongoClient
+from pydantic import BaseModel
+from pymongo.collection import Collection
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import jwt, JWTError
 from passlib.context import CryptContext
 from contextlib import contextmanager
@@ -55,3 +58,18 @@ def token(email: str):
         "exp" : expire,
     }
     return {"access_token":jwt.encode(access_token,SECRET ,algorithm=ALGORITHM), "token_type": "bearer"}
+
+@auth_router.post("/login")
+async def verify(form: OAuth2PasswordRequestForm = Depends()):
+    
+    user = search_user(form.username) #el username es el correo
+
+    if not crypt.verify(form.password, user.password): 
+        raise HTTPException(status_code=400, detail="Contraseña incorrecta")
+    
+    return token(user.email)
+
+#Obtener usuario actual
+@auth_router.get("/current_user")
+async def me(user: User = Depends(auth_user)):
+    return {"id" : user.id}
