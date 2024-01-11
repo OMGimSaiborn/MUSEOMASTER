@@ -31,6 +31,14 @@ class EmployeeInDB(BaseModel):
     experiencia: str
     event_info: List[dict]
 
+class User(BaseModel):
+    id: str
+    email: str
+    name: str
+
+class UserInDB(User):
+    password: str
+
 class EmployeeCreateResponse(BaseModel):
     message: str
     employee: EmployeeInDB

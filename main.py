@@ -11,6 +11,9 @@ from routes.ticket_routes import ticket_stats_router
 from fastapi.middleware.cors import CORSMiddleware
 from routes.binnacle_routes import binnacle_router
 from routes.colabs_routes import colabs_router
+from routes.auth_routes import auth_router
+from routes.login_routes import login_router
+
 
 app = FastAPI(responses={404: {"detail": "Item not found"}})
 
@@ -36,6 +39,8 @@ app.include_router(calendar_router)
 app.include_router(binnacle_router)
 app.include_router(ticket_stats_router)
 app.include_router(colabs_router)
+app.include_router(auth_router)
+app.include_router(login_router)
 
 
 @app.get('/')
