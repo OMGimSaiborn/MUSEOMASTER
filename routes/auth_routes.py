@@ -9,10 +9,14 @@ from contextlib import contextmanager
 from datetime import datetime, timedelta
 from db import get_db
 from models import User, UserInDB
+from dotenv import load_dotenv 
+import os 
 
-ALGORITHM = "HS256"
-ACCES_TOKEN_DURATION = 1 #minutes
-SECRET = "hola"
+load_dotenv() 
+
+algoritmo = os.getenv("ALGORITHM") 
+duration = int(os.getenv("ACCES_TOKEN_DURATION") )
+secret = os.getenv("SECRET")
 
 auth_router = APIRouter(prefix="/auth", tags=["Log In"])
 
@@ -41,7 +45,7 @@ async def auth_user(token : str = Depends(oauth2)):
     exception = HTTPException(status_code=401, detail="Credenciales inválidas")
     
     try: 
-        email = jwt.decode(token, SECRET, ALGORITHM).get("sub")
+        email = jwt.decode(token, secret, algoritmo).get("sub")
         if email is None:
             raise exception
         
@@ -51,13 +55,13 @@ async def auth_user(token : str = Depends(oauth2)):
     return search_user(email)
 
 def token(email: str):
-    expire = datetime.utcnow() + timedelta(minutes=ACCES_TOKEN_DURATION)
+    expire = datetime.utcnow() + timedelta(minutes=duration)
     
     access_token = {
         "sub" : email,
         "exp" : expire,
     }
-    return {"access_token":jwt.encode(access_token,SECRET ,algorithm=ALGORITHM), "token_type": "bearer"}
+    return {"access_token":jwt.encode(access_token,secret ,algorithm=algoritmo), "token_type": "bearer"}
 
 @auth_router.post("/login")
 async def verify(form: OAuth2PasswordRequestForm = Depends()):
