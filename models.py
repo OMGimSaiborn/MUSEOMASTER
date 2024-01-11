@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import List, Union, Tuple
+from typing import List, Union, Tuple, Optional
 from bson import ObjectId
 from datetime import datetime, date
 
@@ -107,12 +107,36 @@ class DeletedEventResponse(BaseModel):
 
     #BITACORAS DE ACCESO
 class AccessBinnacle(BaseModel):
+    #id: Optional[str]
     employee_id: str
     location: str
-    in_hour: datetime = Field(default_factory=datetime.now)
+    in_hour: datetime
     out_hour: datetime
     activity: str
     description: str
 
+class BinnacleId(AccessBinnacle):
+    id: str
+    
+class CheckIn(BaseModel):
+    employee_id: str
+    location: str
+    in_hour: datetime = Field(default_factory=datetime.now)
+
+class CheckOut(BaseModel):
+    out_hour: datetime = Field(default_factory=datetime.now)
+    activity: str
+    description: str
+
+    #COLABORADORES
+class Colaborator(BaseModel):    
+    name: str
+    email : str
+    institution : str
+    area: List[str]
+    date_added: datetime 
+    
+class ColaboratorID(Colaborator):
+    id: str
 class SuccessResponse(BaseModel):
     message: str
